@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from chore_reminder.messages import good_morning_message
+
 
 @dataclass(frozen=True)
 class Occurrence:
@@ -50,6 +52,12 @@ def due_occurrences(config: dict, now: datetime | None = None) -> list[Occurrenc
                     "message_template",
                     "{assignee}, today's chore is: {task}. Reply Y when done.",
                 )
+                task_message = message_template.format(
+                    assignee=person["display_name"],
+                    task=rotation_item["task"],
+                    due_at=due_at.isoformat(),
+                    due_by=due_by.isoformat(),
+                )
                 occurrences.append(
                     Occurrence(
                         schedule_id=schedule["id"],
@@ -61,12 +69,7 @@ def due_occurrences(config: dict, now: datetime | None = None) -> list[Occurrenc
                         task=rotation_item["task"],
                         due_at=due_at,
                         due_by=due_by,
-                        message=message_template.format(
-                            assignee=person["display_name"],
-                            task=rotation_item["task"],
-                            due_at=due_at.isoformat(),
-                            due_by=due_by.isoformat(),
-                        ),
+                        message=f"{good_morning_message()} {task_message}",
                     )
                 )
 

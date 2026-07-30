@@ -5,6 +5,7 @@ SMS chore reminders for a rotating household task list.
 ## Project Overview
 
 This project sends native SMS reminders through Twilio, records each reminder locally, and records a completion when the assignee replies `Y`.
+Daily task messages are prefixed with a random good-morning style opener, and completion replies are picked from a random thank-you message bank.
 
 The first configured rotation is:
 

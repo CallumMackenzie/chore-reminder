@@ -35,6 +35,7 @@ def test_due_occurrence_for_first_day():
     assert len(occurrences) == 1
     assert occurrences[0].assignee_name == "Max"
     assert occurrences[0].task == "vacuum"
+    assert "today's chore is: vacuum" in occurrences[0].message
 
 
 def test_rotation_advances_daily():

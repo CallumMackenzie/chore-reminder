@@ -8,9 +8,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 from chore_reminder.config import load_config
 from chore_reminder.db import connect, find_open_reminder_for_phone, record_completion
-
-
-CONFIRMATION_MESSAGE = "Thanks for being a good roommate."
+from chore_reminder.messages import thank_you_message
 
 
 def create_app(config_path: str | None = None) -> Flask:
@@ -41,7 +39,7 @@ def create_app(config_path: str | None = None) -> Flask:
             raw_body=body,
             completed_at=datetime.now(timezone.utc),
         )
-        response.message(CONFIRMATION_MESSAGE)
+        response.message(thank_you_message())
         return Response(str(response), mimetype="application/xml")
 
     return app

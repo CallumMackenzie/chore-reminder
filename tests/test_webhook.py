@@ -2,7 +2,8 @@ import json
 from datetime import datetime, timedelta, timezone
 
 from chore_reminder.db import connect
-from chore_reminder.webhook import CONFIRMATION_MESSAGE, create_app
+from chore_reminder.messages import THANK_YOU_MESSAGES
+from chore_reminder.webhook import create_app
 
 
 def test_y_reply_gets_good_roommate_confirmation(tmp_path):
@@ -58,4 +59,4 @@ def test_y_reply_gets_good_roommate_confirmation(tmp_path):
     response = app.test_client().post("/sms", data={"From": "+15555550101", "Body": "Y"})
 
     assert response.status_code == 200
-    assert CONFIRMATION_MESSAGE in response.text
+    assert any(message in response.text for message in THANK_YOU_MESSAGES)
