@@ -60,6 +60,3 @@ def validate_config(data: dict[str, Any]) -> None:
         for item in schedule["rotation"]:
             if item["assignee"] not in people:
                 raise ValueError(f"unknown assignee: {item['assignee']}")
-    for person_id, person in people.items():
-        if not person.get("phone"):
-            raise ValueError(f"person {person_id} requires phone")

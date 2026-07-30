@@ -40,7 +40,7 @@ Edit `.env` with:
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_FROM_NUMBER`
 
-Edit `config/tasks.json` with the local household phone numbers. This file is ignored by git.
+Edit `config/tasks.json` with the local household phone numbers. This file is ignored by git. Leave a person's `phone` blank to skip their reminders for now.
 
 Then initialize the database:
 

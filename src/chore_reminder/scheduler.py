@@ -13,7 +13,7 @@ class Occurrence:
     task_id: str
     assignee_id: str
     assignee_name: str
-    phone: str
+    phone: str | None
     task: str
     due_at: datetime
     due_by: datetime
@@ -112,11 +112,9 @@ def next_occurrences(config: dict, count: int = 10, now: datetime | None = None)
     return sorted(found, key=lambda item: item.due_at)[:count]
 
 
-def _person_phone(person: dict) -> str:
+def _person_phone(person: dict) -> str | None:
     phone = person.get("phone")
-    if phone:
-        return phone
-    raise ValueError("person config requires phone")
+    return phone if phone else None
 
 
 def _index_at_or_before(start: date, target: date, interval: dict) -> int:

@@ -52,3 +52,18 @@ def test_upcoming_starts_after_now():
 
     assert upcoming[0].due_at.date().isoformat() == "2026-07-31"
     assert upcoming[0].task == "clean counters"
+
+
+def test_blank_phone_is_allowed_for_unpopulated_people():
+    config = {
+        **CONFIG,
+        "people": {
+            **CONFIG["people"],
+            "max": {"display_name": "Max", "phone": ""},
+        },
+    }
+    now = datetime(2026, 7, 30, 8, 1, tzinfo=ZoneInfo("America/Vancouver"))
+    occurrences = due_occurrences(config, now=now)
+
+    assert occurrences[0].assignee_name == "Max"
+    assert occurrences[0].phone is None

@@ -43,6 +43,9 @@ def main() -> None:
             if has_reminder(conn, item.reminder_id) or has_completion(conn, item.reminder_id):
                 skipped += 1
                 continue
+            if not item.phone:
+                skipped += 1
+                continue
 
             twilio_sid = send_sms(item.phone, item.message)
             record_reminder(conn, item, to_phone=item.phone, twilio_sid=twilio_sid)
