@@ -1,0 +1,26 @@
+[project]
+name = "chore-reminder"
+version = "0.1.0"
+description = "SMS chore reminders with rotating household tasks."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "flask>=3.0.0",
+  "python-dotenv>=1.0.1",
+  "twilio>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+chore-reminder = "chore_reminder.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
