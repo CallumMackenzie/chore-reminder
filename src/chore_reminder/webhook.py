@@ -10,9 +10,12 @@ from chore_reminder.config import load_config
 from chore_reminder.db import connect, find_open_reminder_for_phone, record_completion
 
 
-def create_app() -> Flask:
+CONFIRMATION_MESSAGE = "Thanks for being a good roommate."
+
+
+def create_app(config_path: str | None = None) -> Flask:
     load_dotenv()
-    app_config = load_config()
+    app_config = load_config(config_path)
     conn = connect(app_config.database_path)
     app = Flask(__name__)
 
@@ -38,7 +41,7 @@ def create_app() -> Flask:
             raw_body=body,
             completed_at=datetime.now(timezone.utc),
         )
-        response.message("Recorded. Thank you.")
+        response.message(CONFIRMATION_MESSAGE)
         return Response(str(response), mimetype="application/xml")
 
     return app
