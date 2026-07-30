@@ -55,24 +55,26 @@ Run once manually:
 chore-reminder send-due
 ```
 
-Cron for the default daily 8 AM reminders:
+Cron for the default daily 8 AM reminders. Use the absolute path to this repo on whichever machine is running it:
 
 ```cron
-0 8 * * * cd /Users/callum/.openclaw/workspace/chore-reminder && . .venv/bin/activate && chore-reminder send-due >> logs/cron.log 2>&1
+0 8 * * * /absolute/path/to/chore-reminder/scripts/send-due.sh >> /absolute/path/to/chore-reminder/logs/cron.log 2>&1
 ```
 
 For multiple schedules, run cron at each relevant reminder minute or every 15 minutes:
 
 ```cron
-*/15 * * * * cd /Users/callum/.openclaw/workspace/chore-reminder && . .venv/bin/activate && chore-reminder send-due >> logs/cron.log 2>&1
+*/15 * * * * /absolute/path/to/chore-reminder/scripts/send-due.sh >> /absolute/path/to/chore-reminder/logs/cron.log 2>&1
 ```
+
+The wrapper script resolves the project directory from its own location, so the same script works on Linux or macOS as long as cron uses an absolute path.
 
 ## Receiving `Y` Replies
 
 Run the webhook app:
 
 ```bash
-flask --app chore_reminder.webhook run --host 0.0.0.0 --port 8080
+scripts/webhook.sh
 ```
 
 Expose it with a tunnel or deploy it somewhere reachable, then set your Twilio number's incoming message webhook to:
