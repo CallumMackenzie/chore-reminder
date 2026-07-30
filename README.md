@@ -55,19 +55,15 @@ Run once manually:
 chore-reminder send-due
 ```
 
-Cron for the default daily 8 AM reminders. Use the absolute path to this repo on whichever machine is running it:
+Cron for the default daily 8 AM wake-up. Use the absolute path to this repo on whichever machine is running it:
 
 ```cron
 0 8 * * * /absolute/path/to/chore-reminder/scripts/send-due.sh >> /absolute/path/to/chore-reminder/logs/cron.log 2>&1
 ```
 
-For multiple schedules, run cron at each relevant reminder minute or every 15 minutes:
+The app still supports daily or monthly intervals. With a daily 8 AM cron, keep each schedule's `reminder_time` at `08:00`; the app will decide whether a daily, weekly-style, or monthly task is due that morning.
 
-```cron
-*/15 * * * * /absolute/path/to/chore-reminder/scripts/send-due.sh >> /absolute/path/to/chore-reminder/logs/cron.log 2>&1
-```
-
-The wrapper script resolves the project directory from its own location, so the same script works on Linux or macOS as long as cron uses an absolute path.
+The wrapper script resolves the project directory from its own location, so the same cron command shape works on Linux or macOS as long as cron uses an absolute path.
 
 ## Receiving `Y` Replies
 
