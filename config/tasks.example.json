@@ -5,11 +5,11 @@
   "people": {
     "callum": {
       "display_name": "Callum",
-      "phone_env": "CALLUM_PHONE_NUMBER"
+      "phone": "+15555550101"
     },
     "max": {
       "display_name": "Max",
-      "phone_env": "MAX_PHONE_NUMBER"
+      "phone": "+15555550102"
     }
   },
   "schedules": [

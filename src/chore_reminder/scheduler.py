@@ -13,7 +13,7 @@ class Occurrence:
     task_id: str
     assignee_id: str
     assignee_name: str
-    phone_env: str
+    phone: str
     task: str
     due_at: datetime
     due_by: datetime
@@ -57,7 +57,7 @@ def due_occurrences(config: dict, now: datetime | None = None) -> list[Occurrenc
                         task_id=rotation_item["task_id"],
                         assignee_id=rotation_item["assignee"],
                         assignee_name=person["display_name"],
-                        phone_env=person["phone_env"],
+                        phone=_person_phone(person),
                         task=rotation_item["task"],
                         due_at=due_at,
                         due_by=due_by,
@@ -99,7 +99,7 @@ def next_occurrences(config: dict, count: int = 10, now: datetime | None = None)
                     task_id=rotation_item["task_id"],
                     assignee_id=rotation_item["assignee"],
                     assignee_name=person["display_name"],
-                    phone_env=person["phone_env"],
+                    phone=_person_phone(person),
                     task=rotation_item["task"],
                     due_at=due_at,
                     due_by=_due_by(due_at, schedule["due_window"]),
@@ -110,6 +110,13 @@ def next_occurrences(config: dict, count: int = 10, now: datetime | None = None)
                 break
 
     return sorted(found, key=lambda item: item.due_at)[:count]
+
+
+def _person_phone(person: dict) -> str:
+    phone = person.get("phone")
+    if phone:
+        return phone
+    raise ValueError("person config requires phone")
 
 
 def _index_at_or_before(start: date, target: date, interval: dict) -> int:

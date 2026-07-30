@@ -17,8 +17,8 @@ Each item is one day in the rotation, starting from `start_date` in `config/task
 
 ## Planning Notes
 
-- `config/tasks.json` owns the people, phone-number environment variable names, task rotations, intervals, due windows, and reminder time.
-- `.env` owns secrets and private phone numbers.
+- `config/tasks.json` owns the people, phone numbers, task rotations, intervals, due windows, and reminder time.
+- `.env` owns Twilio settings only.
 - `send-due` is safe for cron because it records sent reminders and will not resend the same occurrence.
 - Replies require a Twilio Messaging webhook pointed at `POST /sms`.
 - The local database is a Turso/libSQL-compatible SQLite file by default at `./data/chore-reminder.db`.
@@ -39,8 +39,8 @@ Edit `.env` with:
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_FROM_NUMBER`
-- `CALLUM_PHONE_NUMBER`
-- `MAX_PHONE_NUMBER`
+
+Edit `config/tasks.json` with the local household phone numbers. This file is ignored by git.
 
 Then initialize the database:
 

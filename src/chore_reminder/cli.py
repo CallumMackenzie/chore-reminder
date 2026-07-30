@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -45,12 +44,8 @@ def main() -> None:
                 skipped += 1
                 continue
 
-            to_phone = os.getenv(item.phone_env)
-            if not to_phone:
-                raise RuntimeError(f"missing recipient phone env var: {item.phone_env}")
-
-            twilio_sid = send_sms(to_phone, item.message)
-            record_reminder(conn, item, to_phone=to_phone, twilio_sid=twilio_sid)
+            twilio_sid = send_sms(item.phone, item.message)
+            record_reminder(conn, item, to_phone=item.phone, twilio_sid=twilio_sid)
             sent += 1
         print(f"sent={sent} skipped={skipped}")
         return

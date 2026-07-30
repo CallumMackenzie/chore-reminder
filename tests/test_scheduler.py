@@ -7,8 +7,8 @@ from chore_reminder.scheduler import due_occurrences, next_occurrences
 CONFIG = {
     "timezone": "America/Vancouver",
     "people": {
-        "max": {"display_name": "Max", "phone_env": "MAX_PHONE_NUMBER"},
-        "callum": {"display_name": "Callum", "phone_env": "CALLUM_PHONE_NUMBER"},
+        "max": {"display_name": "Max", "phone": "+15555550102"},
+        "callum": {"display_name": "Callum", "phone": "+15555550101"},
     },
     "schedules": [
         {
