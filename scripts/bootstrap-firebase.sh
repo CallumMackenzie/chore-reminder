@@ -32,24 +32,36 @@ cat > .firebaserc <<JSON
 }
 JSON
 
-REQUIRED_APIS=(
+FIRESTORE_APIS=(
+  firestore.googleapis.com
+)
+
+BILLING_REQUIRED_APIS=(
   artifactregistry.googleapis.com
   cloudbuild.googleapis.com
   cloudfunctions.googleapis.com
   cloudscheduler.googleapis.com
   eventarc.googleapis.com
-  firestore.googleapis.com
   run.googleapis.com
   secretmanager.googleapis.com
 )
 
+BILLING_PENDING=0
+
 if command -v gcloud >/dev/null 2>&1 && [ -n "$(gcloud auth list --filter=status:ACTIVE --format='value(account)' 2>/dev/null)" ]; then
-  gcloud services enable "${REQUIRED_APIS[@]}" --project "$PROJECT_ID"
+  gcloud services enable "${FIRESTORE_APIS[@]}" --project "$PROJECT_ID"
+  if ! gcloud services enable "${BILLING_REQUIRED_APIS[@]}" --project "$PROJECT_ID"; then
+    BILLING_PENDING=1
+  fi
 else
   cat <<EOF
 Firebase project exists and .firebaserc has been written, but gcloud is not authenticated.
 
-Enable these APIs before rerunning this script:
+Authenticate gcloud before rerunning this script:
+  gcloud auth login
+  scripts/bootstrap-firebase.sh $PROJECT_ID
+
+Or enable these APIs manually:
   https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=$PROJECT_ID
   https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=$PROJECT_ID
   https://console.developers.google.com/apis/api/cloudscheduler.googleapis.com/overview?project=$PROJECT_ID
@@ -58,10 +70,6 @@ Enable these APIs before rerunning this script:
   https://console.developers.google.com/apis/api/run.googleapis.com/overview?project=$PROJECT_ID
   https://console.developers.google.com/apis/api/eventarc.googleapis.com/overview?project=$PROJECT_ID
   https://console.developers.google.com/apis/api/secretmanager.googleapis.com/overview?project=$PROJECT_ID
-
-Or authenticate gcloud and rerun:
-  gcloud auth login
-  scripts/bootstrap-firebase.sh $PROJECT_ID
 EOF
   exit 1
 fi
@@ -84,10 +92,25 @@ cat <<EOF
 
 Firebase project is prepared: $PROJECT_ID
 
-Billing still needs to be enabled before deploying functions:
+EOF
+
+if [ "$BILLING_PENDING" -eq 1 ]; then
+  cat <<EOF
+Firestore is ready and rules are deployed.
+
+Billing still needs to be enabled before deploying functions/secrets:
   https://console.firebase.google.com/project/$PROJECT_ID/usage/details
 
 After billing is enabled, run:
   scripts/set-firebase-secrets.sh $PROJECT_ID
   firebase deploy --project $PROJECT_ID
 EOF
+else
+  cat <<EOF
+Billing-required APIs are enabled too.
+
+Next run:
+  scripts/set-firebase-secrets.sh $PROJECT_ID
+  firebase deploy --project $PROJECT_ID
+EOF
+fi
