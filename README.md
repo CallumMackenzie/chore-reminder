@@ -14,7 +14,7 @@ The first configured rotation is:
 3. Callum vacuums
 4. Callum cleans counters
 
-Each item is one day in the rotation, starting from `start_date` in `config/tasks.json`.
+Each item is one day in the rotation, starting from `startDate` in `functions/config/tasks.json`.
 
 ## Planning Notes
 
