@@ -1,8 +1,13 @@
 .env
+.firebaserc
 .venv/
 __pycache__/
 *.pyc
 config/tasks.json
 data/
+functions/config/tasks.json
+functions/.env
+functions/lib/
+functions/node_modules/
 logs/*.log
 .pytest_cache/

@@ -1,1 +1,0 @@
-"""Chore Reminder package."""
