@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase-admin/app";
+import { defineSecret } from "firebase-functions/params";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
@@ -10,7 +11,12 @@ import { sendSms } from "./twilioSms";
 
 initializeApp();
 
-export const smsWebhook = onRequest({ region: "us-central1" }, async (request, response) => {
+const twilioAccountSid = defineSecret("TWILIO_ACCOUNT_SID");
+const twilioAuthToken = defineSecret("TWILIO_AUTH_TOKEN");
+const twilioFromNumber = defineSecret("TWILIO_FROM_NUMBER");
+const twilioSecrets = [twilioAccountSid, twilioAuthToken, twilioFromNumber];
+
+export const smsWebhook = onRequest({ region: "us-central1", secrets: twilioSecrets }, async (request, response) => {
   const fromPhone = String(request.body?.From ?? "");
   const body = String(request.body?.Body ?? "").trim();
 
@@ -37,6 +43,7 @@ export const dailyChores = onSchedule(
     schedule: "0 8 * * *",
     timeZone: "America/Vancouver",
     region: "us-central1",
+    secrets: twilioSecrets,
   },
   async () => {
     const config = loadConfig();
@@ -47,7 +54,11 @@ export const dailyChores = onSchedule(
       if (await store.hasReminder(occurrence.reminderId)) continue;
       if (await store.hasCompletion(occurrence.reminderId)) continue;
 
-      const twilioSid = await sendSms(occurrence.phone, occurrence.message);
+      const twilioSid = await sendSms(occurrence.phone, occurrence.message, {
+        accountSid: twilioAccountSid.value(),
+        authToken: twilioAuthToken.value(),
+        fromPhone: twilioFromNumber.value(),
+      });
       await store.recordReminder(occurrence, twilioSid);
     }
   },

@@ -40,11 +40,11 @@ npm run build
 
 Edit `.firebaserc` with your Firebase project ID.
 
-Edit `functions/.env` with:
+For deployment, Twilio credentials are stored as Firebase function secrets:
 
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_FROM_NUMBER`
+```bash
+scripts/set-firebase-secrets.sh YOUR_PROJECT_ID
+```
 
 Edit `functions/config/tasks.json` with the local household phone numbers. This file is ignored by git. Leave a person's `phone` blank to skip their reminders for now.
 
@@ -78,5 +78,13 @@ https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/smsWebhook
 ## Deploy
 
 ```bash
-firebase deploy
+scripts/bootstrap-firebase.sh callum-chore-reminder
+scripts/set-firebase-secrets.sh callum-chore-reminder
+firebase deploy --project callum-chore-reminder
+```
+
+After functions deploy, configure the Twilio webhook:
+
+```bash
+scripts/configure-twilio-webhook.sh callum-chore-reminder TWILIO_PHONE_NUMBER_SID
 ```
