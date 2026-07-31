@@ -8,5 +8,6 @@ if [ -z "$PROJECT_ID" ]; then
 fi
 
 firebase functions:secrets:set TWILIO_ACCOUNT_SID --project "$PROJECT_ID"
-firebase functions:secrets:set TWILIO_AUTH_TOKEN --project "$PROJECT_ID"
+firebase functions:secrets:set TWILIO_API_KEY_SID --project "$PROJECT_ID"
+firebase functions:secrets:set TWILIO_API_KEY_SECRET --project "$PROJECT_ID"
 firebase functions:secrets:set TWILIO_FROM_NUMBER --project "$PROJECT_ID"

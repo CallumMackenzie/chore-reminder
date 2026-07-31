@@ -12,9 +12,10 @@ import { sendSms } from "./twilioSms";
 initializeApp();
 
 const twilioAccountSid = defineSecret("TWILIO_ACCOUNT_SID");
-const twilioAuthToken = defineSecret("TWILIO_AUTH_TOKEN");
+const twilioApiKeySid = defineSecret("TWILIO_API_KEY_SID");
+const twilioApiKeySecret = defineSecret("TWILIO_API_KEY_SECRET");
 const twilioFromNumber = defineSecret("TWILIO_FROM_NUMBER");
-const twilioSecrets = [twilioAccountSid, twilioAuthToken, twilioFromNumber];
+const twilioSecrets = [twilioAccountSid, twilioApiKeySid, twilioApiKeySecret, twilioFromNumber];
 
 export const smsWebhook = onRequest({ region: "us-central1", secrets: twilioSecrets }, async (request, response) => {
   const fromPhone = String(request.body?.From ?? "");
@@ -56,7 +57,8 @@ export const dailyChores = onSchedule(
 
       const twilioSid = await sendSms(occurrence.phone, occurrence.message, {
         accountSid: twilioAccountSid.value(),
-        authToken: twilioAuthToken.value(),
+        apiKeySid: twilioApiKeySid.value(),
+        apiKeySecret: twilioApiKeySecret.value(),
         fromPhone: twilioFromNumber.value(),
       });
       await store.recordReminder(occurrence, twilioSid);

@@ -46,6 +46,13 @@ For deployment, Twilio credentials are stored as Firebase function secrets:
 scripts/set-firebase-secrets.sh YOUR_PROJECT_ID
 ```
 
+The deployed app expects:
+
+- `TWILIO_ACCOUNT_SID` - the real `AC...` Twilio account SID
+- `TWILIO_API_KEY_SID` - the `SK...` API key SID
+- `TWILIO_API_KEY_SECRET` - the API key secret
+- `TWILIO_FROM_NUMBER` - the Twilio SMS number in E.164 format
+
 Edit `functions/config/tasks.json` with the local household phone numbers. This file is ignored by git. Leave a person's `phone` blank to skip their reminders for now.
 
 ## Local Verification
