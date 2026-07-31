@@ -9,10 +9,10 @@ Daily task messages are prefixed with a random good-morning style opener, and co
 
 The first configured rotation is:
 
-1. Max vacuums
-2. Max cleans counters
-3. Callum vacuums
-4. Callum cleans counters
+1. Callum vacuums
+2. Callum cleans counters
+3. Max vacuums
+4. Max cleans counters
 
 Each item is one day in the rotation, starting from `startDate` in `functions/config/tasks.json`.
 

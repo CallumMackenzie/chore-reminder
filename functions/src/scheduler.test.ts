@@ -17,10 +17,10 @@ const config: AppConfig = {
       interval: { every: 1, unit: "day" },
       dueWindow: { amount: 1, unit: "day" },
       rotation: [
-        { taskId: "max_vacuums", assignee: "max", task: "vacuum" },
-        { taskId: "max_cleans_counters", assignee: "max", task: "clean counters" },
         { taskId: "callum_vacuums", assignee: "callum", task: "vacuum" },
         { taskId: "callum_cleans_counters", assignee: "callum", task: "clean counters" },
+        { taskId: "max_vacuums", assignee: "max", task: "vacuum" },
+        { taskId: "max_cleans_counters", assignee: "max", task: "clean counters" },
       ],
     },
   ],
@@ -32,15 +32,15 @@ describe("dueOccurrences", () => {
     const occurrences = dueOccurrences(config, now);
 
     expect(occurrences).toHaveLength(1);
-    expect(occurrences[0].assigneeName).toBe("Max");
-    expect(occurrences[0].phone).toBeUndefined();
+    expect(occurrences[0].assigneeName).toBe("Callum");
+    expect(occurrences[0].phone).toBe("+15555550101");
   });
 
   it("advances the daily rotation", () => {
     const now = new Date("2026-08-01T15:01:00.000Z");
     const occurrences = dueOccurrences(config, now);
 
-    expect(occurrences.at(-1)?.assigneeName).toBe("Callum");
+    expect(occurrences.at(-1)?.assigneeName).toBe("Max");
     expect(occurrences.at(-1)?.task).toBe("vacuum");
   });
 });

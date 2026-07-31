@@ -27,16 +27,6 @@
       "messageTemplate": "{assignee}, today's chore is: {task}. Reply Y when done.",
       "rotation": [
         {
-          "taskId": "max_vacuums",
-          "assignee": "max",
-          "task": "vacuum"
-        },
-        {
-          "taskId": "max_cleans_counters",
-          "assignee": "max",
-          "task": "clean counters"
-        },
-        {
           "taskId": "callum_vacuums",
           "assignee": "callum",
           "task": "vacuum"
@@ -44,6 +34,16 @@
         {
           "taskId": "callum_cleans_counters",
           "assignee": "callum",
+          "task": "clean counters"
+        },
+        {
+          "taskId": "max_vacuums",
+          "assignee": "max",
+          "task": "vacuum"
+        },
+        {
+          "taskId": "max_cleans_counters",
+          "assignee": "max",
           "task": "clean counters"
         }
       ]
