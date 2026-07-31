@@ -17,7 +17,7 @@ const twilioApiKeySecret = defineSecret("TWILIO_API_KEY_SECRET");
 const twilioFromNumber = defineSecret("TWILIO_FROM_NUMBER");
 const twilioSecrets = [twilioAccountSid, twilioApiKeySid, twilioApiKeySecret, twilioFromNumber];
 
-export const smsWebhook = onRequest({ region: "us-central1", secrets: twilioSecrets }, async (request, response) => {
+export const smsWebhook = onRequest({ region: "us-central1", invoker: "public", secrets: twilioSecrets }, async (request, response) => {
   const fromPhone = String(request.body?.From ?? "");
   const body = String(request.body?.Body ?? "").trim();
 
