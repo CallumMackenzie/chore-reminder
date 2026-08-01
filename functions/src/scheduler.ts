@@ -20,7 +20,7 @@ export function dueOccurrences(config: AppConfig, now = new Date()): Occurrence[
       if (dueAt <= now && now <= dueBy) {
         const rotationItem = schedule.rotation[index % schedule.rotation.length];
         const person = config.people[rotationItem.assignee];
-        const taskMessage = (schedule.messageTemplate ?? "{assignee}, today's chore is: {task}. Reply Y when done.")
+        const taskMessage = (schedule.messageTemplate ?? "{assignee}, today's chore: {task}. Text Y when handled fr.")
           .replaceAll("{assignee}", person.displayName)
           .replaceAll("{task}", rotationItem.task)
           .replaceAll("{due_at}", dueAt.toISOString())

@@ -4,7 +4,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
 import { loadConfig } from "./config";
-import { thankYouMessage } from "./messages";
+import { invalidCompletionMessage, noOpenReminderMessage, thankYouMessage } from "./messages";
 import { dueOccurrences } from "./scheduler";
 import { FirestoreReminderStore } from "./store";
 import { sendSms } from "./twilioSms";
@@ -24,14 +24,14 @@ export const smsWebhook = onRequest({ region: "us-central1", invoker: "public", 
   response.set("Content-Type", "application/xml");
 
   if (body.toUpperCase() !== "Y") {
-    response.status(200).send(twiml("Reply Y when the chore is complete."));
+    response.status(200).send(twiml(invalidCompletionMessage()));
     return;
   }
 
   const store = new FirestoreReminderStore();
   const reminder = await store.findOpenReminderForPhone(fromPhone);
   if (!reminder) {
-    response.status(200).send(twiml("No open chore found for this number."));
+    response.status(200).send(twiml(noOpenReminderMessage()));
     return;
   }
 
