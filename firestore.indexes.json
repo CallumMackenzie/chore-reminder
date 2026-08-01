@@ -1,0 +1,19 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "reminders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "toPhone",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dueBy",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
