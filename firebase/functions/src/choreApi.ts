@@ -16,6 +16,11 @@ export interface ChoreOutcomeReader {
   getReminderMetadata(reminderIds: string[]): Promise<Map<string, StoredReminderMetadata>>;
 }
 
+export interface SmsChoreOption {
+  occurrence: Occurrence;
+  outcome?: ChoreOutcomeStatus;
+}
+
 export async function buildChoreSnapshot(
   config: AppConfig,
   outcomes: ChoreOutcomeReader,
@@ -53,6 +58,42 @@ export function findTodayOccurrence(config: AppConfig, reminderId: string, now =
   const range = relativeLocalDayRange(now, config.timezone, 0, 1);
   return occurrencesBetween(config, range.startsAt, range.endsAt)
     .find((item) => item.reminderId === reminderId) ?? null;
+}
+
+export async function findTodaysChoresForPhone(
+  config: AppConfig,
+  data: ChoreOutcomeReader,
+  phone: string,
+  now = new Date(),
+): Promise<SmsChoreOption[]> {
+  const identity = findIdentityByPhone(config, phone);
+  if (!identity) return [];
+
+  const range = relativeLocalDayRange(now, config.timezone, 0, 1);
+  const occurrences = occurrencesBetween(config, range.startsAt, range.endsAt);
+  const ids = occurrences.map((item) => item.reminderId);
+  const [outcomes, reminders] = await Promise.all([
+    data.getOutcomes(ids),
+    data.getReminderMetadata(ids),
+  ]);
+
+  return occurrences.flatMap((occurrence): SmsChoreOption[] => {
+    const stored = reminders.get(occurrence.reminderId);
+    const assigneeId = stored?.assigneeId ?? occurrence.assigneeId;
+    if (assigneeId !== identity.userId) return [];
+    const taskId = stored?.taskId ?? occurrence.taskId;
+    const configuredTask = config.schedules.flatMap((schedule) => schedule.rotation).find((item) => item.taskId === taskId)?.task;
+    return [{
+      occurrence: {
+        ...occurrence,
+        assigneeId,
+        assigneeName: stored?.assigneeName ?? config.people[assigneeId]?.displayName ?? occurrence.assigneeName,
+        taskId,
+        task: stored?.task ?? configuredTask ?? occurrence.task,
+      },
+      outcome: outcomes.get(occurrence.reminderId)?.status,
+    }];
+  });
 }
 
 export function parseOutcomeStatus(value: unknown): ChoreOutcomeStatus | null {

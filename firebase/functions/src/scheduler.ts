@@ -70,7 +70,10 @@ function buildOccurrence(
   dueAt: Date,
   dueBy: Date,
 ): Occurrence {
-  const rotationItem = schedule.rotation[index % schedule.rotation.length];
+  const startOffset = schedule.startAssignee
+    ? schedule.rotation.findIndex((item) => item.assignee === schedule.startAssignee)
+    : 0;
+  const rotationItem = schedule.rotation[(startOffset + index) % schedule.rotation.length];
   const person = config.people[rotationItem.assignee];
   const taskMessage = (schedule.messageTemplate ?? "{assignee}, today's chore: {task}. Text Y when handled or S to skip.")
     .replaceAll("{assignee}", person.displayName)

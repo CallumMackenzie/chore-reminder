@@ -63,4 +63,28 @@ describe("dueOccurrences", () => {
     expect(occurrences[0].assigneeName).toBe("Callum");
     expect(occurrences[0].task).toBe("clean counters");
   });
+
+  it("starts a monthly rotation on the configured assignee and continues from there", () => {
+    const monthlyConfig: AppConfig = {
+      timezone: "America/Vancouver",
+      people: config.people,
+      schedules: [{
+        id: "monthly_bathroom",
+        startDate: "2026-09-12",
+        startAssignee: "max",
+        reminderTime: "08:00",
+        interval: { every: 1, unit: "month" },
+        dueWindow: { amount: 3, unit: "day" },
+        rotation: [
+          { taskId: "callum_bathroom", assignee: "callum", task: "deep-clean the bathroom" },
+          { taskId: "max_bathroom", assignee: "max", task: "deep-clean the bathroom" },
+        ],
+      }],
+    };
+    const september = relativeLocalDayRange(new Date("2026-09-12T18:00:00.000Z"), monthlyConfig.timezone, 0, 1);
+    const october = relativeLocalDayRange(new Date("2026-10-12T18:00:00.000Z"), monthlyConfig.timezone, 0, 1);
+
+    expect(occurrencesBetween(monthlyConfig, september.startsAt, september.endsAt)[0].assigneeId).toBe("max");
+    expect(occurrencesBetween(monthlyConfig, october.startsAt, october.endsAt)[0].assigneeId).toBe("callum");
+  });
 });

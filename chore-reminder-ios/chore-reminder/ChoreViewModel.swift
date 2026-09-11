@@ -45,15 +45,18 @@ final class ChoreViewModel: ObservableObject {
         }
     }
 
-    func update(_ chore: ChoreItem, status: ChoreStatus, userId: String) async {
-        guard let client, chore.actionable else { return }
+    @discardableResult
+    func update(_ chore: ChoreItem, status: ChoreStatus, userId: String) async -> Bool {
+        guard let client, chore.actionable else { return false }
         updatingReminderId = chore.id
         defer { updatingReminderId = nil }
         do {
             snapshot = try await client.update(reminderId: chore.reminderId, status: status, userId: userId)
             errorMessage = nil
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 

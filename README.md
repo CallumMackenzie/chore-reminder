@@ -4,19 +4,10 @@ Firebase + Twilio SMS chore reminders for a rotating household task list.
 
 ## Project Overview
 
-This project sends native SMS reminders through Twilio, records reminders/outcomes in Firestore, and records a completion when the assignee replies `Y` or a skip when they reply `S`/`SKIP`.
+This project sends native SMS reminders through Twilio, records reminders/outcomes in Firestore, and records a completion when the assignee replies `Y` or a skip when they reply `S`/`SKIP`. If multiple chores are due, replies use a number such as `Y1` or `S2`.
 Daily task messages are prefixed with a random good-morning style opener, and completion replies are picked from a random thank-you message bank.
 
-The first configured rotation is:
-
-1. Callum vacuums
-2. Max vacuums
-3. Amelia vacuums
-4. Callum cleans counters
-5. Max cleans counters
-6. Amelia cleans counters
-
-Each item is one day in the rotation, starting from `startDate` in `firebase/functions/config/tasks.json`.
+Each configured rotation item is one interval in the schedule, starting from `startDate` in `firebase/functions/config/tasks.json`. Household names, phone numbers, and exact assignments belong only in that ignored local config file.
 
 Firebase Functions, Firestore configuration, and deployment scripts live under `firebase/`. The SwiftUI client lives under `chore-reminder-ios/`.
 
@@ -30,6 +21,7 @@ Firebase Functions, Firestore configuration, and deployment scripts live under `
 - The token-authenticated `choreApi` returns today, the next 5 days, and the previous 3 days without exposing phone numbers.
 - App updates are limited server-side to chores scheduled for the current Vancouver calendar day.
 - The scheduler supports `day` and `month` intervals, so the same project can handle daily chores, weekly-style chores with `{"every": 7, "unit": "day"}`, or monthly reminders with `{"every": 1, "unit": "month"}`.
+- Monthly schedules may set `startAssignee` to begin with a particular person and continue through the declared rotation from that position.
 
 ## Setup
 
@@ -100,13 +92,13 @@ https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/smsWebhook
 ## Deploy
 
 ```bash
-firebase/scripts/bootstrap-firebase.sh callum-chore-reminder
-firebase/scripts/set-firebase-secrets.sh callum-chore-reminder
-firebase deploy --config firebase/firebase.json --project callum-chore-reminder
+firebase/scripts/bootstrap-firebase.sh YOUR_PROJECT_ID
+firebase/scripts/set-firebase-secrets.sh YOUR_PROJECT_ID
+firebase deploy --config firebase/firebase.json --project YOUR_PROJECT_ID
 ```
 
 After functions deploy, configure the Twilio webhook:
 
 ```bash
-firebase/scripts/configure-twilio-webhook.sh callum-chore-reminder TWILIO_PHONE_NUMBER_SID
+firebase/scripts/configure-twilio-webhook.sh YOUR_PROJECT_ID TWILIO_PHONE_NUMBER_SID
 ```

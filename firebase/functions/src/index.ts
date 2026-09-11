@@ -4,12 +4,14 @@ import { defineSecret } from "firebase-functions/params";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
-import { buildChoreSnapshot, findIdentityByPhone, findTodayOccurrence, parseOutcomeStatus, parseSmsOutcome } from "./choreApi";
+import { buildChoreSnapshot, findIdentityByPhone, findTodayOccurrence, findTodaysChoresForPhone, parseOutcomeStatus } from "./choreApi";
 import { loadConfig } from "./config";
-import { invalidCompletionMessage, noOpenReminderMessage, skippedMessage, thankYouMessage } from "./messages";
+import { noOpenReminderMessage, skippedMessage, thankYouMessage } from "./messages";
 import { dueOccurrences } from "./scheduler";
+import { currentChoresMessage, parseSmsCommand, reminderMessage, selectSmsChore } from "./smsCommands";
 import { FirestoreReminderStore } from "./store";
 import { sendSms } from "./twilioSms";
+import type { Occurrence } from "./types";
 
 initializeApp();
 
@@ -23,24 +25,31 @@ const twilioSecrets = [twilioAccountSid, twilioApiKeySid, twilioApiKeySecret, tw
 export const smsWebhook = onRequest({ region: "us-central1", invoker: "public", secrets: twilioSecrets }, async (request, response) => {
   const fromPhone = String(request.body?.From ?? "");
   const body = String(request.body?.Body ?? "").trim();
-  const outcome = parseSmsOutcome(body);
 
   response.set("Content-Type", "application/xml");
 
-  if (!outcome) {
-    response.status(200).send(twiml(invalidCompletionMessage()));
-    return;
-  }
-
+  const config = loadConfig();
   const store = new FirestoreReminderStore();
-  const reminder = await store.findOpenReminderForPhone(fromPhone);
-  if (!reminder) {
+  const options = await findTodaysChoresForPhone(config, store, fromPhone);
+  if (options.length === 0) {
     response.status(200).send(twiml(noOpenReminderMessage()));
     return;
   }
 
-  await store.recordSmsOutcome(reminder, outcome, fromPhone, body);
-  response.status(200).send(twiml(outcome === "skipped" ? skippedMessage() : thankYouMessage()));
+  const command = parseSmsCommand(body);
+  if (!command) {
+    response.status(200).send(twiml(currentChoresMessage(options)));
+    return;
+  }
+
+  const selected = selectSmsChore(options, command);
+  if (!selected || selected.outcome) {
+    response.status(200).send(twiml(currentChoresMessage(options)));
+    return;
+  }
+
+  await store.recordSmsOutcome(selected.occurrence, command.status, fromPhone, body);
+  response.status(200).send(twiml(command.status === "skipped" ? skippedMessage() : thankYouMessage()));
 });
 
 export const choreApi = onRequest(
@@ -115,19 +124,32 @@ export const dailyChores = onSchedule(
   async () => {
     const config = loadConfig();
     const store = new FirestoreReminderStore();
+    const pending: Occurrence[] = [];
 
     for (const occurrence of dueOccurrences(config)) {
       if (!occurrence.phone) continue;
       if (await store.hasReminder(occurrence.reminderId)) continue;
       if (await store.hasCompletion(occurrence.reminderId)) continue;
 
-      const twilioSid = await sendSms(occurrence.phone, occurrence.message, {
+      pending.push(occurrence);
+    }
+
+    const groups = new Map<string, Occurrence[]>();
+    for (const occurrence of pending) {
+      const key = `${occurrence.phone}|${occurrence.dueAt.toISOString().slice(0, 10)}`;
+      groups.set(key, [...(groups.get(key) ?? []), occurrence]);
+    }
+
+    for (const occurrences of groups.values()) {
+      const phone = occurrences[0]?.phone;
+      if (!phone) continue;
+      const twilioSid = await sendSms(phone, reminderMessage(occurrences), {
         accountSid: twilioAccountSid.value(),
         apiKeySid: twilioApiKeySid.value(),
         apiKeySecret: twilioApiKeySecret.value(),
         fromPhone: twilioFromNumber.value(),
       });
-      await store.recordReminder(occurrence, twilioSid);
+      await Promise.all(occurrences.map((occurrence) => store.recordReminder(occurrence, twilioSid)));
     }
   },
 );

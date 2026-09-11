@@ -6,6 +6,7 @@ struct ContentView: View {
     @Query private var sessions: [UserSession]
     @StateObject private var model = ChoreViewModel()
     @State private var phone = ""
+    @State private var showsCompletionSmile = false
 
     var body: some View {
         if let session = sessions.first {
@@ -17,13 +18,13 @@ struct ContentView: View {
 
     private var loginView: some View {
         NavigationStack {
-            VStack(spacing: 22) {
+            VStack(spacing: 18) {
                 Spacer()
                 Image(systemName: "checklist.checked")
-                    .font(.system(size: 68))
+                    .font(.system(size: 56, weight: .medium))
                     .foregroundStyle(.tint)
-                VStack(spacing: 8) {
-                    Text("House Chores")
+                VStack(spacing: 6) {
+                    Text("Choughres")
                         .font(.largeTitle.bold())
                     Text("Enter your phone number to find your household profile.")
                         .multilineTextAlignment(.center)
@@ -61,7 +62,7 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            .padding(28)
+            .padding(24)
         }
     }
 
@@ -80,13 +81,9 @@ struct ContentView: View {
                     )
                 }
             }
-            .navigationTitle("Chores")
+            .navigationTitle("Choughres")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text(session.displayName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button("Refresh", systemImage: "arrow.clockwise") {
@@ -103,10 +100,34 @@ struct ContentView: View {
             .task(id: session.userId) {
                 if model.snapshot == nil { await model.load() }
             }
-            .alert("Chore Reminder", isPresented: errorPresented) {
+            .onChange(
+                of: model.snapshot?.today.contains {
+                    $0.assigneeId == session.userId && $0.status == .completed
+                } ?? false,
+                initial: true
+            ) { _, isCompleted in
+                withAnimation(.spring(response: 0.8, dampingFraction: 0.72)) {
+                    showsCompletionSmile = isCompleted
+                }
+            }
+            .alert("Choughres", isPresented: errorPresented) {
                 Button("OK", role: .cancel) { model.errorMessage = nil }
             } message: {
                 Text(model.errorMessage ?? "Something went wrong.")
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if showsCompletionSmile {
+                CompletionCelebration()
+                    .safeAreaPadding(.bottom, 18)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .bottom)
+                                .combined(with: .scale(scale: 0.55))
+                                .combined(with: .opacity),
+                            removal: .scale(scale: 0.8).combined(with: .opacity)
+                        )
+                    )
             }
         }
     }
@@ -120,16 +141,16 @@ struct ContentView: View {
 
     private func choreList(_ snapshot: ChoreSnapshot, userId: String) -> some View {
         List {
-            Section("Today") {
+            Section {
                 if snapshot.today.isEmpty {
                     Label("No chores today", systemImage: "sparkles")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(snapshot.today) { chore in
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
                             ChoreRow(chore: chore, showsDate: false)
                             if chore.actionable && chore.assigneeId == userId {
-                                HStack(spacing: 10) {
+                                HStack(spacing: 8) {
                                     OutcomeButton(
                                         title: "Complete",
                                         systemImage: "checkmark.circle.fill",
@@ -137,7 +158,7 @@ struct ContentView: View {
                                         selected: chore.status == .completed,
                                         disabled: model.updatingReminderId != nil
                                     ) {
-                                        Task { await model.update(chore, status: .completed, userId: userId) }
+                                        Task { await complete(chore, userId: userId) }
                                     }
                                     OutcomeButton(
                                         title: "Skip",
@@ -158,23 +179,14 @@ struct ContentView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .padding(.vertical, 5)
+                        .padding(.vertical, 2)
                     }
                 }
+            } header: {
+                SectionHeader(title: "Today", systemImage: "sun.max.fill")
             }
 
-            Section("Upcoming") {
-                if snapshot.upcoming.isEmpty {
-                    Text("Nothing scheduled in the next 5 days.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.upcoming) { chore in
-                        ChoreRow(chore: chore, showsDate: true)
-                    }
-                }
-            }
-
-            Section("Past 3 Days") {
+            Section {
                 if snapshot.history.isEmpty {
                     Text("No recent chores.")
                         .foregroundStyle(.secondary)
@@ -183,8 +195,27 @@ struct ContentView: View {
                         ChoreRow(chore: chore, showsDate: true)
                     }
                 }
+            } header: {
+                SectionHeader(title: "Past 3 Days", systemImage: "clock.arrow.circlepath")
+            }
+
+            Section {
+                if snapshot.upcoming.isEmpty {
+                    Text("Nothing scheduled in the next 5 days.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(snapshot.upcoming) { chore in
+                        ChoreRow(chore: chore, showsDate: true)
+                    }
+                }
+            } header: {
+                SectionHeader(title: "Next 5 Days", systemImage: "calendar")
             }
         }
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
+        .environment(\.defaultMinListRowHeight, 40)
+        .contentMargins(.top, 8, for: .scrollContent)
         .refreshable { await model.load() }
     }
 
@@ -202,6 +233,50 @@ struct ContentView: View {
         try? modelContext.save()
         model.reset()
     }
+
+    private func complete(_ chore: ChoreItem, userId: String) async {
+        guard await model.update(chore, status: .completed, userId: userId) else { return }
+        withAnimation(.spring(response: 0.8, dampingFraction: 0.72)) {
+            showsCompletionSmile = true
+        }
+    }
+}
+
+private struct CompletionCelebration: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "face.smiling")
+                .font(.system(size: 36, weight: .semibold))
+                .symbolEffect(.bounce, options: .speed(0.7))
+            Text("Nice work!")
+                .font(.headline.weight(.semibold))
+            Spacer(minLength: 0)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title2)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 18)
+        .frame(maxWidth: .infinity, minHeight: 68)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(.green.gradient)
+                .shadow(color: .green.opacity(0.3), radius: 10, y: 5)
+        )
+        .padding(.horizontal, 18)
+            .accessibilityLabel("Chore completed")
+    }
+}
+
+private struct SectionHeader: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(nil)
+    }
 }
 
 private struct ChoreRow: View {
@@ -209,27 +284,35 @@ private struct ChoreRow: View {
     let showsDate: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 9) {
             ZStack {
-                Circle().fill(.tint.opacity(0.14)).frame(width: 42, height: 42)
+                Circle().fill(.tint.opacity(0.13)).frame(width: 34, height: 34)
                 Text(chore.assigneeName.prefix(1).uppercased())
-                    .font(.headline)
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(.tint)
             }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(chore.task.capitalized).font(.headline)
-                Text(chore.assigneeName).foregroundStyle(.secondary)
-                if showsDate, let dueDate = chore.dueDate {
-                    Text(dueDate, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(chore.task.capitalized)
+                    .font(.subheadline.weight(.semibold))
+                HStack(spacing: 5) {
+                    Text(chore.assigneeName)
+                    if showsDate, let dueDate = chore.dueDate {
+                        Text("·")
+                        Text(dueDate, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
+                    }
                 }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             Spacer()
             Label(chore.status.label, systemImage: chore.status.systemImage)
-                .font(.caption.weight(.semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(chore.status.color)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .background(chore.status.color.opacity(0.11), in: Capsule())
         }
+        .padding(.vertical, 1)
     }
 }
 
@@ -243,9 +326,12 @@ private struct OutcomeButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage).frame(maxWidth: .infinity)
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
+        .controlSize(.small)
         .tint(selected ? color : color.opacity(0.72))
         .disabled(disabled || selected)
     }

@@ -16,6 +16,7 @@ export interface RotationItem {
 export interface ScheduleConfig {
   id: string;
   startDate: string;
+  startAssignee?: string;
   reminderTime: string;
   interval: {
     every: number;
