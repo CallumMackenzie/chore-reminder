@@ -18,32 +18,79 @@ export function dueOccurrences(config: AppConfig, now = new Date()): Occurrence[
       const dueAt = zonedDateTime(dueDate, schedule.reminderTime, config.timezone);
       const dueBy = addDueWindow(dueAt, schedule.dueWindow);
       if (dueAt <= now && now <= dueBy) {
-        const rotationItem = schedule.rotation[index % schedule.rotation.length];
-        const person = config.people[rotationItem.assignee];
-        const taskMessage = (schedule.messageTemplate ?? "{assignee}, today's chore: {task}. Text Y when handled fr.")
-          .replaceAll("{assignee}", person.displayName)
-          .replaceAll("{task}", rotationItem.task)
-          .replaceAll("{due_at}", dueAt.toISOString())
-          .replaceAll("{due_by}", dueBy.toISOString());
-
-        occurrences.push({
-          reminderId: `${schedule.id}:${index}`,
-          scheduleId: schedule.id,
-          occurrenceIndex: index,
-          taskId: rotationItem.taskId,
-          assigneeId: rotationItem.assignee,
-          assigneeName: person.displayName,
-          phone: person.phone || undefined,
-          task: rotationItem.task,
-          dueAt,
-          dueBy,
-          message: `${goodMorningMessage()} ${taskMessage}`,
-        });
+        occurrences.push(buildOccurrence(config, schedule, index, dueAt, dueBy));
       }
     }
   }
 
   return occurrences.sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());
+}
+
+export function occurrencesBetween(config: AppConfig, startsAt: Date, endsAt: Date): Occurrence[] {
+  if (endsAt <= startsAt) return [];
+
+  const occurrences: Occurrence[] = [];
+  const firstLocalDate = localDateInTimezone(startsAt, config.timezone);
+  const lastLocalDate = localDateInTimezone(new Date(endsAt.getTime() - 1), config.timezone);
+
+  for (const schedule of config.schedules) {
+    const startDate = parseDate(schedule.startDate);
+    const firstIndex = Math.max(0, indexAtOrBefore(startDate, firstLocalDate, schedule.interval) - 1);
+    const lastIndex = indexAtOrBefore(startDate, lastLocalDate, schedule.interval) + 1;
+
+    for (let index = firstIndex; index <= lastIndex; index += 1) {
+      const dueDate = addInterval(startDate, schedule.interval, index);
+      const dueAt = zonedDateTime(dueDate, schedule.reminderTime, config.timezone);
+      if (dueAt < startsAt || dueAt >= endsAt) continue;
+      const dueBy = addDueWindow(dueAt, schedule.dueWindow);
+      occurrences.push(buildOccurrence(config, schedule, index, dueAt, dueBy));
+    }
+  }
+
+  return occurrences.sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());
+}
+
+export function relativeLocalDayRange(
+  now: Date,
+  timezone: string,
+  startDayOffset: number,
+  endDayOffset: number,
+): { startsAt: Date; endsAt: Date } {
+  const localDate = localDateInTimezone(now, timezone);
+  return {
+    startsAt: zonedDateTime(addDays(localDate, startDayOffset), "00:00", timezone),
+    endsAt: zonedDateTime(addDays(localDate, endDayOffset), "00:00", timezone),
+  };
+}
+
+function buildOccurrence(
+  config: AppConfig,
+  schedule: AppConfig["schedules"][number],
+  index: number,
+  dueAt: Date,
+  dueBy: Date,
+): Occurrence {
+  const rotationItem = schedule.rotation[index % schedule.rotation.length];
+  const person = config.people[rotationItem.assignee];
+  const taskMessage = (schedule.messageTemplate ?? "{assignee}, today's chore: {task}. Text Y when handled or S to skip.")
+    .replaceAll("{assignee}", person.displayName)
+    .replaceAll("{task}", rotationItem.task)
+    .replaceAll("{due_at}", dueAt.toISOString())
+    .replaceAll("{due_by}", dueBy.toISOString());
+
+  return {
+    reminderId: `${schedule.id}:${index}`,
+    scheduleId: schedule.id,
+    occurrenceIndex: index,
+    taskId: rotationItem.taskId,
+    assigneeId: rotationItem.assignee,
+    assigneeName: person.displayName,
+    phone: person.phone || undefined,
+    task: rotationItem.task,
+    dueAt,
+    dueBy,
+    message: `${goodMorningMessage()} ${taskMessage}`,
+  };
 }
 
 function parseDate(value: string): Date {
@@ -114,6 +161,10 @@ function addDays(value: Date, days: number): Date {
 
 function addMonths(value: Date, months: number): Date {
   const result = new Date(value);
+  const day = result.getUTCDate();
+  result.setUTCDate(1);
   result.setUTCMonth(result.getUTCMonth() + months);
+  const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
+  result.setUTCDate(Math.min(day, lastDay));
   return result;
 }

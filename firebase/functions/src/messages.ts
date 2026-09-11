@@ -68,11 +68,17 @@ const COMPLETION_TAGS = [
 ] as const;
 
 export const INVALID_COMPLETION_MESSAGES = [
-  "Nah, text back Y when the chore is handled.",
-  "Aight, I need a Y when that jawn is done.",
-  "Reply Y once the chore is complete, gang.",
-  "Close, but send Y when you actually cleared it.",
-  "Bet, but the magic word is Y when it is done.",
+  "Reply Y when the chore is handled or S to skip it.",
+  "Aight, send Y when that jawn is done or S to skip.",
+  "Reply Y to complete the chore or S to skip it, gang.",
+  "Send Y when you cleared it, or S if you need to skip.",
+  "Bet, I need Y for handled or S for skipped.",
+] as const;
+
+export const SKIPPED_MESSAGES = [
+  "Aight, skipped and recorded.",
+  "Say less, that chore is marked skipped.",
+  "Skip logged. The rotation keeps moving.",
 ] as const;
 
 export const NO_OPEN_REMINDER_MESSAGES = [
@@ -300,6 +306,10 @@ export function invalidCompletionMessage(): string {
 
 export function noOpenReminderMessage(): string {
   return randomItem(NO_OPEN_REMINDER_MESSAGES);
+}
+
+export function skippedMessage(): string {
+  return randomItem(SKIPPED_MESSAGES);
 }
 
 function randomItem(items: readonly string[]): string {

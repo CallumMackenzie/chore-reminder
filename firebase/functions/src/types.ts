@@ -1,4 +1,6 @@
 export type IntervalUnit = "day" | "month";
+export type ChoreOutcomeStatus = "completed" | "skipped";
+export type ChoreDisplayStatus = ChoreOutcomeStatus | "pending" | "notCompleted";
 
 export interface PersonConfig {
   displayName: string;
@@ -46,4 +48,42 @@ export interface Occurrence {
   dueAt: Date;
   dueBy: Date;
   message: string;
+}
+
+export interface StoredChoreOutcome {
+  status: ChoreOutcomeStatus;
+  resolvedAt?: Date;
+}
+
+export interface StoredReminderMetadata {
+  taskId: string;
+  assigneeId: string;
+  task?: string;
+  assigneeName?: string;
+}
+
+export interface ChoreApiItem {
+  reminderId: string;
+  scheduleId: string;
+  taskId: string;
+  assigneeId: string;
+  assigneeName: string;
+  task: string;
+  dueAt: string;
+  dueBy: string;
+  status: ChoreDisplayStatus;
+  actionable: boolean;
+}
+
+export interface ChoreApiSnapshot {
+  generatedAt: string;
+  timezone: string;
+  today: ChoreApiItem[];
+  upcoming: ChoreApiItem[];
+  history: ChoreApiItem[];
+}
+
+export interface ChoreApiIdentity {
+  userId: string;
+  displayName: string;
 }

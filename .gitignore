@@ -1,5 +1,6 @@
 .env
 firebase/.firebaserc
+firebase/.chore-api-token
 .venv/
 __pycache__/
 *.pyc
@@ -8,5 +9,6 @@ data/
 firebase/functions/.env
 firebase/functions/lib/
 firebase/functions/node_modules/
+chore-reminder-ios/chore-reminder/APIConfig.plist
 logs/*.log
 .pytest_cache/

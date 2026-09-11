@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dueOccurrences } from "./scheduler";
+import { dueOccurrences, occurrencesBetween, relativeLocalDayRange } from "./scheduler";
 import type { AppConfig } from "./types";
 
 const config: AppConfig = {
@@ -42,5 +42,25 @@ describe("dueOccurrences", () => {
 
     expect(occurrences.at(-1)?.assigneeName).toBe("Max");
     expect(occurrences.at(-1)?.task).toBe("vacuum");
+  });
+
+  it("rotates monthly chores and clamps month-end dates", () => {
+    const monthlyConfig: AppConfig = {
+      ...config,
+      schedules: [{
+        ...config.schedules[0],
+        id: "monthly",
+        startDate: "2026-01-31",
+        interval: { every: 1, unit: "month" },
+      }],
+    };
+    const range = relativeLocalDayRange(new Date("2026-02-28T18:00:00.000Z"), monthlyConfig.timezone, 0, 1);
+    const occurrences = occurrencesBetween(monthlyConfig, range.startsAt, range.endsAt);
+
+    expect(occurrences).toHaveLength(1);
+    expect(occurrences[0].occurrenceIndex).toBe(1);
+    expect(occurrences[0].dueAt.toISOString()).toBe("2026-02-28T16:00:00.000Z");
+    expect(occurrences[0].assigneeName).toBe("Callum");
+    expect(occurrences[0].task).toBe("clean counters");
   });
 });

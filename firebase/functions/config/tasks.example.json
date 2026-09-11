@@ -24,7 +24,7 @@
         "amount": 1,
         "unit": "day"
       },
-      "messageTemplate": "{assignee}, today's chore: {task}. Text Y when handled fr.",
+      "messageTemplate": "{assignee}, today's chore: {task}. Text Y when handled or S to skip.",
       "rotation": [
         {
           "taskId": "callum_vacuums",
