@@ -24,7 +24,7 @@ struct ContentView: View {
                     .font(.system(size: 56, weight: .medium))
                     .foregroundStyle(.tint)
                 VStack(spacing: 6) {
-                    Text("Choughres")
+                    Text("Cleez")
                         .font(.largeTitle.bold())
                     Text("Enter your phone number to find your household profile.")
                         .multilineTextAlignment(.center)
@@ -81,7 +81,7 @@ struct ContentView: View {
                     )
                 }
             }
-            .navigationTitle("Choughres")
+            .navigationTitle("Cleez")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -110,7 +110,7 @@ struct ContentView: View {
                     showsCompletionSmile = isCompleted
                 }
             }
-            .alert("Choughres", isPresented: errorPresented) {
+            .alert("Cleez", isPresented: errorPresented) {
                 Button("OK", role: .cancel) { model.errorMessage = nil }
             } message: {
                 Text(model.errorMessage ?? "Something went wrong.")
