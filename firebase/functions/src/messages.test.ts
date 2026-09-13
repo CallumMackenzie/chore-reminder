@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  COMPLETION_ACKS,
-  COMPLETION_TAGS,
   GOOD_MORNING_MESSAGES,
   INVALID_COMPLETION_MESSAGES,
   NO_OPEN_REMINDER_MESSAGES,
@@ -12,8 +10,6 @@ import {
 
 const ALL_MESSAGES = [
   ...GOOD_MORNING_MESSAGES,
-  ...COMPLETION_ACKS,
-  ...COMPLETION_TAGS,
   ...INVALID_COMPLETION_MESSAGES,
   ...NO_OPEN_REMINDER_MESSAGES,
   ...SKIPPED_MESSAGES,
@@ -33,7 +29,8 @@ describe("chore reminder intros", () => {
 });
 
 describe("completion messages", () => {
-  it("keeps a 200-compliment completion pool", () => {
-    expect(THANK_YOU_MESSAGES).toHaveLength(200);
+  it("keeps a varied pool of concise completion replies", () => {
+    expect(THANK_YOU_MESSAGES).toHaveLength(40);
+    expect(THANK_YOU_MESSAGES.every((message) => message.length <= 40)).toBe(true);
   });
 });
