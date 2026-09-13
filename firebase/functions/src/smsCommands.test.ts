@@ -49,6 +49,8 @@ describe("SMS commands", () => {
     ];
     expect(currentChoresMessage(options)).toContain("Y1/Y2");
     expect(currentChoresMessage(options)).toContain("S1/S2");
-    expect(reminderMessage(options.map((option) => option.occurrence))).toContain("1) vacuum; 2) clean counters");
+    const reminder = reminderMessage(options.map((option) => option.occurrence));
+    expect(reminder).toContain("Collingclean");
+    expect(reminder).toContain("1) vacuum; 2) clean counters");
   });
 });
