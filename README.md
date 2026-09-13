@@ -7,18 +7,18 @@ Firebase + Twilio SMS chore reminders for a rotating household task list.
 This project sends native SMS reminders through Twilio, records reminders/outcomes in Firestore, and records a completion when the assignee replies `Y` or a skip when they reply `S`/`SKIP`. If multiple chores are due, replies use a number such as `Y1` or `S2`.
 Daily task messages are prefixed with a random good-morning style opener, and completion replies are picked from a random thank-you message bank.
 
-Each configured rotation item is one interval in the schedule, starting from `startDate` in `firebase/functions/config/tasks.json`. Household names, phone numbers, and exact assignments belong only in that ignored local config file.
+Each configured rotation item is one interval in the schedule, starting from `startDate` in a JSON file under `firebase/functions/config/`. Each non-example JSON file represents one household. Household names, phone numbers, and exact assignments belong only in those ignored local config files.
 
 Firebase Functions, Firestore configuration, and deployment scripts live under `firebase/`. The SwiftUI client lives under `chore-reminder-ios/`.
 
 ## Planning Notes
 
-- `firebase/functions/config/tasks.json` owns local household config: people, phone numbers, task rotations, intervals, due windows, and reminder time.
+- `firebase/functions/config/*.json` owns local household configs: one file per household, containing its people, phone numbers, task rotations, intervals, due windows, and reminder time. Example files are ignored by the runtime.
 - `firebase/functions/.env` owns Twilio settings only.
 - The scheduled Firebase function is safe to run daily because it records sent reminders and will not resend the same occurrence.
 - Replies require a Twilio Messaging webhook pointed at the deployed `smsWebhook` HTTPS function.
 - Firestore stores `reminders` and `completions`.
-- The token-authenticated `choreApi` returns today, the next 5 days, and the previous 3 days without exposing phone numbers.
+- After login, the token-authenticated `choreApi` returns today, the next 5 days, and the previous 3 days for only the matched household, without exposing phone numbers.
 - App updates are limited server-side to chores scheduled for the current Vancouver calendar day.
 - The scheduler supports `day` and `month` intervals, so the same project can handle daily chores, weekly-style chores with `{"every": 7, "unit": "day"}`, or monthly reminders with `{"every": 1, "unit": "month"}`.
 - Monthly schedules may set `startAssignee` to begin with a particular person and continue through the declared rotation from that position.
@@ -30,6 +30,7 @@ npm install -g firebase-tools
 cp firebase/.firebaserc.example firebase/.firebaserc
 cp firebase/functions/.env.example firebase/functions/.env
 cp firebase/functions/config/tasks.example.json firebase/functions/config/tasks.json
+# Add more household files, for example firebase/functions/config/sirus-zoe.json.
 npm --prefix firebase/functions install
 npm --prefix firebase/functions test
 npm --prefix firebase/functions run build
@@ -51,7 +52,7 @@ The deployed app expects:
 - `TWILIO_FROM_NUMBER` - the Twilio SMS number in E.164 format
 - `CHORE_API_TOKEN` - the bearer token bundled into the iOS app
 
-Edit `firebase/functions/config/tasks.json` with the local household phone numbers. This file is ignored by git. Leave a person's `phone` blank to skip their reminders for now.
+Edit `firebase/functions/config/tasks.json` with the local household phone numbers. Add another uniquely named JSON file for each additional household. All non-example JSON files in the directory are loaded and ignored by git. Schedule IDs and phone numbers must be unique across households. Leave a person's `phone` blank to skip their reminders for now.
 
 ## Local Verification
 
@@ -75,7 +76,7 @@ The app still supports daily or monthly intervals. With a daily 8 AM scheduler, 
 
 ## Chore API and iOS App
 
-`GET /choreApi` returns the current chore snapshot. `POST /choreApi/login` matches a configured household phone number and returns its user ID/display name. `POST /choreApi/outcome` accepts a `reminderId`, user ID, and status of `completed` or `skipped`; past, future, and non-owner updates are rejected.
+`POST /choreApi/login` matches a configured household phone number and returns its household ID, user ID, and display name. The household ID is the config filename without `.json`. `GET /choreApi?householdId=...` returns only that household's current chore snapshot. `POST /choreApi/outcome` accepts the household ID, `reminderId`, user ID, and a status of `completed` or `skipped`; past, future, and non-owner updates are rejected.
 
 Copy `chore-reminder-ios/chore-reminder/APIConfig.example.plist` to `APIConfig.plist`, set the deployed function URL and the same token stored as `CHORE_API_TOKEN`, then build the Xcode project. The real plist is ignored by Git but included in the app bundle.
 

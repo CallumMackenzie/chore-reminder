@@ -9,8 +9,8 @@ struct ContentView: View {
     @State private var showsCompletionSmile = false
 
     var body: some View {
-        if let session = sessions.first {
-            authenticatedView(session)
+        if let session = sessions.first, let householdId = session.householdId {
+            authenticatedView(session, householdId: householdId)
         } else {
             loginView
         }
@@ -66,11 +66,11 @@ struct ContentView: View {
         }
     }
 
-    private func authenticatedView(_ session: UserSession) -> some View {
+    private func authenticatedView(_ session: UserSession, householdId: String) -> some View {
         NavigationStack {
             Group {
                 if let snapshot = model.snapshot {
-                    choreList(snapshot, userId: session.userId)
+                    choreList(snapshot, householdId: householdId, userId: session.userId)
                 } else if model.isLoading {
                     ProgressView("Loading chores…")
                 } else {
@@ -87,7 +87,7 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button("Refresh", systemImage: "arrow.clockwise") {
-                            Task { await model.load() }
+                            Task { await model.load(householdId: householdId) }
                         }
                         Button("Change User", systemImage: "person.crop.circle.badge.xmark", role: .destructive) {
                             signOut()
@@ -98,7 +98,7 @@ struct ContentView: View {
                 }
             }
             .task(id: session.userId) {
-                if model.snapshot == nil { await model.load() }
+                if model.snapshot == nil { await model.load(householdId: householdId) }
             }
             .onChange(
                 of: model.snapshot?.today.contains {
@@ -139,7 +139,7 @@ struct ContentView: View {
         )
     }
 
-    private func choreList(_ snapshot: ChoreSnapshot, userId: String) -> some View {
+    private func choreList(_ snapshot: ChoreSnapshot, householdId: String, userId: String) -> some View {
         List {
             Section {
                 if snapshot.today.isEmpty {
@@ -158,7 +158,7 @@ struct ContentView: View {
                                         selected: chore.status == .completed,
                                         disabled: model.updatingReminderId != nil
                                     ) {
-                                        Task { await complete(chore, userId: userId) }
+                                        Task { await complete(chore, householdId: householdId, userId: userId) }
                                     }
                                     OutcomeButton(
                                         title: "Skip",
@@ -167,7 +167,14 @@ struct ContentView: View {
                                         selected: chore.status == .skipped,
                                         disabled: model.updatingReminderId != nil
                                     ) {
-                                        Task { await model.update(chore, status: .skipped, userId: userId) }
+                                        Task {
+                                            await model.update(
+                                                chore,
+                                                status: .skipped,
+                                                householdId: householdId,
+                                                userId: userId
+                                            )
+                                        }
                                     }
                                 }
                                 if model.updatingReminderId == chore.id {
@@ -216,16 +223,20 @@ struct ContentView: View {
         .listSectionSpacing(.compact)
         .environment(\.defaultMinListRowHeight, 40)
         .contentMargins(.top, 8, for: .scrollContent)
-        .refreshable { await model.load() }
+        .refreshable { await model.load(householdId: householdId) }
     }
 
     private func logIn() async {
         guard let identity = await model.login(phone: phone) else { return }
         sessions.forEach(modelContext.delete)
-        modelContext.insert(UserSession(userId: identity.userId, displayName: identity.displayName))
+        modelContext.insert(UserSession(
+            householdId: identity.householdId,
+            userId: identity.userId,
+            displayName: identity.displayName
+        ))
         try? modelContext.save()
         phone = ""
-        await model.load()
+        await model.load(householdId: identity.householdId)
     }
 
     private func signOut() {
@@ -234,8 +245,13 @@ struct ContentView: View {
         model.reset()
     }
 
-    private func complete(_ chore: ChoreItem, userId: String) async {
-        guard await model.update(chore, status: .completed, userId: userId) else { return }
+    private func complete(_ chore: ChoreItem, householdId: String, userId: String) async {
+        guard await model.update(
+            chore,
+            status: .completed,
+            householdId: householdId,
+            userId: userId
+        ) else { return }
         withAnimation(.spring(response: 0.8, dampingFraction: 0.72)) {
             showsCompletionSmile = true
         }

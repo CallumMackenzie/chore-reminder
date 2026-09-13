@@ -37,6 +37,11 @@ export interface AppConfig {
   schedules: ScheduleConfig[];
 }
 
+export interface HouseholdConfig {
+  id: string;
+  config: AppConfig;
+}
+
 export interface Occurrence {
   reminderId: string;
   scheduleId: string;
@@ -85,6 +90,7 @@ export interface ChoreApiSnapshot {
 }
 
 export interface ChoreApiIdentity {
+  householdId: string;
   userId: string;
   displayName: string;
 }

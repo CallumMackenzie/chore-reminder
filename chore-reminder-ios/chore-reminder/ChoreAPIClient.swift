@@ -19,27 +19,33 @@ struct ChoreAPIClient {
         self.session = session
     }
 
-    func fetchSnapshot() async throws -> ChoreSnapshot {
-        try await request(path: "", method: "GET", body: nil)
+    func fetchSnapshot(householdId: String) async throws -> ChoreSnapshot {
+        try await request(path: "", method: "GET", body: nil, query: ["householdId": householdId])
     }
 
     func login(phone: String) async throws -> ChoreIdentity {
         try await request(path: "login", method: "POST", body: ["phone": phone])
     }
 
-    func update(reminderId: String, status: ChoreStatus, userId: String) async throws -> ChoreSnapshot {
+    func update(reminderId: String, status: ChoreStatus, householdId: String, userId: String) async throws -> ChoreSnapshot {
         guard status == .completed || status == .skipped else {
             throw ChoreAPIError.invalidStatus
         }
         return try await request(path: "outcome", method: "POST", body: [
             "reminderId": reminderId,
             "status": status.rawValue,
+            "householdId": householdId,
             "userId": userId,
         ])
     }
 
-    private func request<Response: Decodable>(path: String, method: String, body: [String: String]?) async throws -> Response {
-        let url = path.isEmpty ? baseURL : baseURL.appending(path: path)
+    private func request<Response: Decodable>(path: String, method: String, body: [String: String]?, query: [String: String] = [:]) async throws -> Response {
+        let endpoint = path.isEmpty ? baseURL : baseURL.appending(path: path)
+        guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
+            throw ChoreAPIError.invalidResponse
+        }
+        components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        guard let url = components.url else { throw ChoreAPIError.invalidResponse }
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

@@ -4,7 +4,8 @@ firebase/.chore-api-token
 .venv/
 __pycache__/
 *.pyc
-firebase/functions/config/tasks.json
+firebase/functions/config/*.json
+!firebase/functions/config/*.example.json
 data/
 firebase/functions/.env
 firebase/functions/lib/
@@ -12,3 +13,4 @@ firebase/functions/node_modules/
 chore-reminder-ios/chore-reminder/APIConfig.plist
 logs/*.log
 .pytest_cache/
+.DS_Store

@@ -4,8 +4,8 @@ import { defineSecret } from "firebase-functions/params";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
-import { buildChoreSnapshot, findIdentityByPhone, findTodayOccurrence, findTodaysChoresForPhone, parseOutcomeStatus } from "./choreApi";
-import { loadConfig } from "./config";
+import { buildChoreSnapshot, findHouseholdByPhone, findTodayOccurrence, findTodaysChoresForPhone, parseOutcomeStatus } from "./choreApi";
+import { loadConfigs } from "./config";
 import { noOpenReminderMessage, skippedMessage, thankYouMessage } from "./messages";
 import { dueOccurrences } from "./scheduler";
 import { currentChoresMessage, parseSmsCommand, reminderMessage, selectSmsChore } from "./smsCommands";
@@ -28,9 +28,10 @@ export const smsWebhook = onRequest({ region: "us-central1", invoker: "public", 
 
   response.set("Content-Type", "application/xml");
 
-  const config = loadConfig();
+  const households = loadConfigs();
+  const match = findHouseholdByPhone(households, fromPhone);
   const store = new FirestoreReminderStore();
-  const options = await findTodaysChoresForPhone(config, store, fromPhone);
+  const options = match ? await findTodaysChoresForPhone(match.household.config, store, fromPhone) : [];
   if (options.length === 0) {
     response.status(200).send(twiml(noOpenReminderMessage()));
     return;
@@ -63,23 +64,28 @@ export const choreApi = onRequest(
       return;
     }
 
-    const config = loadConfig();
+    const households = loadConfigs();
     const store = new FirestoreReminderStore();
     const now = new Date();
     const path = request.path.replace(/\/+$/, "") || "/";
 
     if (request.method === "GET" && path === "/") {
-      response.status(200).json(await buildChoreSnapshot(config, store, now));
+      const household = findHousehold(households, request.query.householdId);
+      if (!household) {
+        response.status(404).json({ error: "Household not found" });
+        return;
+      }
+      response.status(200).json(await buildChoreSnapshot(household.config, store, now));
       return;
     }
 
     if (request.method === "POST" && path === "/login") {
-      const identity = findIdentityByPhone(config, typeof request.body?.phone === "string" ? request.body.phone : "");
-      if (!identity) {
+      const match = findHouseholdByPhone(households, typeof request.body?.phone === "string" ? request.body.phone : "");
+      if (!match) {
         response.status(404).json({ error: "No household member matches that phone number" });
         return;
       }
-      response.status(200).json(identity);
+      response.status(200).json(match.identity);
       return;
     }
 
@@ -87,12 +93,13 @@ export const choreApi = onRequest(
       const reminderId = typeof request.body?.reminderId === "string" ? request.body.reminderId : "";
       const userId = typeof request.body?.userId === "string" ? request.body.userId : "";
       const status = parseOutcomeStatus(request.body?.status);
-      if (!reminderId || !userId || !status) {
-        response.status(400).json({ error: "reminderId, userId, and a valid status are required" });
+      const household = findHousehold(households, request.body?.householdId);
+      if (!reminderId || !userId || !status || !household) {
+        response.status(400).json({ error: "householdId, reminderId, userId, and a valid status are required" });
         return;
       }
 
-      const occurrence = findTodayOccurrence(config, reminderId, now);
+      const occurrence = findTodayOccurrence(household.config, reminderId, now);
       if (!occurrence) {
         response.status(403).json({ error: "Only today's chores can be updated" });
         return;
@@ -106,7 +113,7 @@ export const choreApi = onRequest(
       }
 
       await store.recordAppOutcome(occurrence, status);
-      response.status(200).json(await buildChoreSnapshot(config, store, now));
+      response.status(200).json(await buildChoreSnapshot(household.config, store, now));
       return;
     }
 
@@ -122,16 +129,18 @@ export const dailyChores = onSchedule(
     secrets: twilioSecrets,
   },
   async () => {
-    const config = loadConfig();
+    const households = loadConfigs();
     const store = new FirestoreReminderStore();
     const pending: Occurrence[] = [];
 
-    for (const occurrence of dueOccurrences(config)) {
-      if (!occurrence.phone) continue;
-      if (await store.hasReminder(occurrence.reminderId)) continue;
-      if (await store.hasCompletion(occurrence.reminderId)) continue;
+    for (const household of households) {
+      for (const occurrence of dueOccurrences(household.config)) {
+        if (!occurrence.phone) continue;
+        if (await store.hasReminder(occurrence.reminderId)) continue;
+        if (await store.hasCompletion(occurrence.reminderId)) continue;
 
-      pending.push(occurrence);
+        pending.push(occurrence);
+      }
     }
 
     const groups = new Map<string, Occurrence[]>();
@@ -153,6 +162,11 @@ export const dailyChores = onSchedule(
     }
   },
 );
+
+function findHousehold(households: ReturnType<typeof loadConfigs>, value: unknown) {
+  if (typeof value !== "string") return undefined;
+  return households.find((household) => household.id === value);
+}
 
 function twiml(message: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(message)}</Message></Response>`;

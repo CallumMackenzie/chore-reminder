@@ -19,12 +19,12 @@ final class ChoreViewModel: ObservableObject {
         }
     }
 
-    func load() async {
+    func load(householdId: String) async {
         guard let client else { return }
         isLoading = true
         defer { isLoading = false }
         do {
-            snapshot = try await client.fetchSnapshot()
+            snapshot = try await client.fetchSnapshot(householdId: householdId)
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -46,12 +46,17 @@ final class ChoreViewModel: ObservableObject {
     }
 
     @discardableResult
-    func update(_ chore: ChoreItem, status: ChoreStatus, userId: String) async -> Bool {
+    func update(_ chore: ChoreItem, status: ChoreStatus, householdId: String, userId: String) async -> Bool {
         guard let client, chore.actionable else { return false }
         updatingReminderId = chore.id
         defer { updatingReminderId = nil }
         do {
-            snapshot = try await client.update(reminderId: chore.reminderId, status: status, userId: userId)
+            snapshot = try await client.update(
+                reminderId: chore.reminderId,
+                status: status,
+                householdId: householdId,
+                userId: userId
+            )
             errorMessage = nil
             return true
         } catch {

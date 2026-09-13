@@ -6,6 +6,7 @@ import type {
   ChoreApiSnapshot,
   ChoreDisplayStatus,
   ChoreOutcomeStatus,
+  HouseholdConfig,
   Occurrence,
   StoredChoreOutcome,
   StoredReminderMetadata,
@@ -107,11 +108,24 @@ export function parseSmsOutcome(value: string): ChoreOutcomeStatus | null {
   return null;
 }
 
-export function findIdentityByPhone(config: AppConfig, value: string): ChoreApiIdentity | null {
+export function findIdentityByPhone(config: AppConfig, value: string): Omit<ChoreApiIdentity, "householdId"> | null {
   const phone = normalizePhone(value);
   if (!phone) return null;
   const match = Object.entries(config.people).find(([, person]) => normalizePhone(person.phone ?? "") === phone);
   return match ? { userId: match[0], displayName: match[1].displayName } : null;
+}
+
+export function findHouseholdByPhone(
+  households: HouseholdConfig[],
+  value: string,
+): { household: HouseholdConfig; identity: ChoreApiIdentity } | null {
+  for (const household of households) {
+    const identity = findIdentityByPhone(household.config, value);
+    if (identity) {
+      return { household, identity: { ...identity, householdId: household.id } };
+    }
+  }
+  return null;
 }
 
 function normalizePhone(value: string): string | null {

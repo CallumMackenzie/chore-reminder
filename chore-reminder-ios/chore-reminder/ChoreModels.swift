@@ -38,6 +38,7 @@ struct ChoreSnapshot: Codable, Sendable {
 }
 
 struct ChoreIdentity: Codable, Sendable {
+    let householdId: String
     let userId: String
     let displayName: String
 }

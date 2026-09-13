@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildChoreSnapshot, findIdentityByPhone, findTodayOccurrence, findTodaysChoresForPhone, parseOutcomeStatus, parseSmsOutcome } from "./choreApi";
+import { buildChoreSnapshot, findHouseholdByPhone, findIdentityByPhone, findTodayOccurrence, findTodaysChoresForPhone, parseOutcomeStatus, parseSmsOutcome } from "./choreApi";
 import type { AppConfig, StoredChoreOutcome } from "./types";
 
 const config: AppConfig = {
@@ -77,6 +77,22 @@ describe("chore API domain", () => {
     };
     expect(findIdentityByPhone(configured, "(236) 978-1158")).toEqual({ userId: "amelia", displayName: "Amelia" });
     expect(findIdentityByPhone(configured, "555-555-5555")).toBeNull();
+  });
+
+  it("identifies both the member and their household from a phone number", () => {
+    const first = { id: "first", config };
+    const second = {
+      id: "sirus-zoe",
+      config: {
+        ...config,
+        people: { sirus: { displayName: "Sirus", phone: "+16049706213" } },
+      },
+    };
+
+    expect(findHouseholdByPhone([first, second], "604-970-6213")).toEqual({
+      household: second,
+      identity: { householdId: "sirus-zoe", userId: "sirus", displayName: "Sirus" },
+    });
   });
 
   it("derives today's chores by phone even when no reminder document exists", async () => {
