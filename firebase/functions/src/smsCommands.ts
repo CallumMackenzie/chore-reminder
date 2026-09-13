@@ -1,5 +1,6 @@
 import type { ChoreOutcomeStatus, Occurrence } from "./types";
 import type { SmsChoreOption } from "./choreApi";
+import { goodMorningMessage } from "./messages";
 
 export interface SmsCommand {
   status: ChoreOutcomeStatus;
@@ -37,7 +38,7 @@ export function reminderMessage(occurrences: Occurrence[]): string {
   if (occurrences.length === 1) return occurrences[0].message;
   const list = occurrences.map((occurrence, index) => `${index + 1}) ${occurrence.task}`).join("; ");
   const numbers = occurrences.map((_, index) => index + 1).join("/");
-  return `${occurrences[0].assigneeName}, today's chores: ${list}. Reply Y${numbers.replaceAll("/", "/Y")} to complete or S${numbers.replaceAll("/", "/S")} to skip.`;
+  return `${goodMorningMessage()} ${occurrences[0].assigneeName}, today's chores: ${list}. Reply Y${numbers.replaceAll("/", "/Y")} to complete or S${numbers.replaceAll("/", "/S")} to skip.`;
 }
 
 function statusSuffix(option: SmsChoreOption): string {
