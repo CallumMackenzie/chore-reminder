@@ -30,8 +30,13 @@ export const smsWebhook = onRequest({ region: "us-central1", invoker: "public", 
 
   const households = loadConfigs();
   const match = findHouseholdByPhone(households, fromPhone);
+  if (!match) {
+    response.status(200).send(emptyTwiml());
+    return;
+  }
+
   const store = new FirestoreReminderStore();
-  const options = match ? await findTodaysChoresForPhone(match.household.config, store, fromPhone) : [];
+  const options = await findTodaysChoresForPhone(match.household.config, store, fromPhone);
   if (options.length === 0) {
     response.status(200).send(twiml(noOpenReminderMessage()));
     return;
@@ -170,6 +175,10 @@ function findHousehold(households: ReturnType<typeof loadConfigs>, value: unknow
 
 function twiml(message: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(message)}</Message></Response>`;
+}
+
+function emptyTwiml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
 }
 
 function escapeXml(value: string): string {
